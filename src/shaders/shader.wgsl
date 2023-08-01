@@ -4,18 +4,15 @@ struct VertexOut {
 }
 
 @vertex
-fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> VertexOut
+fn vertexMain(
+  @location(0) pos: vec2f, // xy-coords
+  @location(1) color: vec3f // rgb
+) -> VertexOut
 {
-  let pos = array(
-    vec2(-0.5, -0.5), // bottom left
-    vec2(0.5, -0.5), // bottom right
-    vec2(0.5, 0.5) // top right
-  );
-
   var output: VertexOut;
 
-  output.position = vec4f(pos[vertexIndex], 0.0, 1.0);
-  output.color = vec4f(1.0, 0.0, 0.0, 1.0);
+  output.position = vec4f(pos, 0.0, 1.0);
+  output.color = vec4f(color, 1.0);
 
   return output;
 }

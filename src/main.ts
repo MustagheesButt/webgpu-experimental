@@ -5,6 +5,9 @@ class Renderer {
   private device!: GPUDevice
   private pipeline!: GPURenderPipeline
 
+  private positionBuffer!: GPUBuffer
+  private colorsBuffer!: GPUBuffer
+
   public async init() {
     const canvas = document.querySelector('canvas') as HTMLCanvasElement
 
@@ -32,6 +35,39 @@ class Renderer {
     })
 
     this.prepareModel()
+
+    this.positionBuffer = this.createBuffer(new Float32Array([
+      -0.5, -0.5,
+      0.5, -0.5,
+      0.5, 0.5,
+
+      0.5, 0.5,
+      0.0, 0.5,
+      0.0, 0.0
+    ]))
+
+    this.colorsBuffer = this.createBuffer(new Float32Array([
+      1.0, 0.0, 1.0,
+      1.0, 1.0, 0.0,
+      0.0, 1.0, 1.0,
+
+      1.0, 0.0, 0.0,
+      0.0, 1.0, 0.0,
+      0.0, 0.0, 1.0,
+    ]))
+  }
+
+  private createBuffer(data: Float32Array): GPUBuffer {
+    const buffer = this.device.createBuffer({
+      size: data.byteLength,
+      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+      mappedAtCreation: true
+    })
+
+    new Float32Array(buffer.getMappedRange()).set(data)
+    buffer.unmap()
+
+    return buffer
   }
 
   private prepareModel() {
@@ -39,10 +75,37 @@ class Renderer {
       code: shaderSource
     })
 
+    const positionBufferLayout: GPUVertexBufferLayout = {
+      arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+      attributes: [
+        {
+          shaderLocation: 0,
+          offset: 0,
+          format: 'float32x2' // 2 floats
+        }
+      ],
+      stepMode: 'vertex'
+    }
+
+    const colorBufferLayout: GPUVertexBufferLayout = {
+      arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
+      attributes: [
+        {
+          shaderLocation: 1,
+          offset: 0,
+          format: 'float32x3' // 2 floats
+        }
+      ],
+      stepMode: 'vertex'
+    }
+
     const vertexState: GPUVertexState = {
       module: shaderModule,
       entryPoint: 'vertexMain',
-      // buffers: []
+      buffers: [
+        positionBufferLayout,
+        colorBufferLayout
+      ]
     }
 
     const fragmentState: GPUFragmentState = {
@@ -67,11 +130,12 @@ class Renderer {
     const commandEncoder = this.device.createCommandEncoder()
 
     const textureView = this.context.getCurrentTexture().createView()
+    const bgColor: GPUColor = { r: 0.5, g: 0.5, b: 0.5, a: 1.0 }
 
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [
         {
-          clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
+          clearValue: bgColor,
           view: textureView,
           loadOp: 'clear',
           storeOp: 'store'
@@ -83,7 +147,11 @@ class Renderer {
 
     // actual drawing here
     passEncoder.setPipeline(this.pipeline)
-    passEncoder.draw(3)
+
+    passEncoder.setVertexBuffer(0, this.positionBuffer)
+    passEncoder.setVertexBuffer(1, this.colorsBuffer)
+
+    passEncoder.draw(6)
 
     passEncoder.end()
 
