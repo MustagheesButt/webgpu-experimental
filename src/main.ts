@@ -1,7 +1,9 @@
+import shaderSource from "./shaders/shader.wgsl?raw"
 
 class Renderer {
   private context!: GPUCanvasContext
   private device!: GPUDevice
+  private pipeline!: GPURenderPipeline
 
   public async init() {
     const canvas = document.querySelector('canvas') as HTMLCanvasElement
@@ -28,6 +30,37 @@ class Renderer {
       device: this.device,
       format: navigator.gpu.getPreferredCanvasFormat()
     })
+
+    this.prepareModel()
+  }
+
+  private prepareModel() {
+    const shaderModule = this.device.createShaderModule({
+      code: shaderSource
+    })
+
+    const vertexState: GPUVertexState = {
+      module: shaderModule,
+      entryPoint: 'vertexMain',
+      // buffers: []
+    }
+
+    const fragmentState: GPUFragmentState = {
+      module: shaderModule,
+      entryPoint: 'fragmentMain',
+      targets: [
+        { format: navigator.gpu.getPreferredCanvasFormat() }
+      ]
+    }
+
+    this.pipeline = this.device.createRenderPipeline({
+      vertex: vertexState,
+      fragment: fragmentState,
+      primitive: {
+        topology: 'triangle-list'
+      },
+      layout: 'auto'
+    })
   }
 
   public draw() {
@@ -38,7 +71,7 @@ class Renderer {
     const renderPassDescriptor: GPURenderPassDescriptor = {
       colorAttachments: [
         {
-          clearValue: { r: 1.0, g: 0.0, b: 0.0, a: 1.0 },
+          clearValue: { r: 0.5, g: 0.5, b: 0.5, a: 1.0 },
           view: textureView,
           loadOp: 'clear',
           storeOp: 'store'
@@ -47,6 +80,10 @@ class Renderer {
     }
 
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor)
+
+    // actual drawing here
+    passEncoder.setPipeline(this.pipeline)
+    passEncoder.draw(3)
 
     passEncoder.end()
 
