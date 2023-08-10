@@ -1,3 +1,4 @@
+import { BufferUtil } from "./buffer-util"
 import { QuadGeometry } from "./geometry"
 import { Texture } from "./texture"
 
@@ -10,6 +11,7 @@ class Renderer {
   private colorsBuffer!: GPUBuffer
   private texCoordsBuffer!: GPUBuffer
   private textureBindGroup!: GPUBindGroup
+  private indexBuffer!: GPUBuffer
 
   private testTexture!: Texture
 
@@ -44,22 +46,10 @@ class Renderer {
 
     const geometry = new QuadGeometry()
 
-    this.positionBuffer = this.createBuffer(new Float32Array(geometry.positions))
-    this.colorsBuffer = this.createBuffer(new Float32Array(geometry.colors))
-    this.texCoordsBuffer = this.createBuffer(new Float32Array(geometry.texCoords))
-  }
-
-  private createBuffer(data: Float32Array): GPUBuffer {
-    const buffer = this.device.createBuffer({
-      size: data.byteLength,
-      usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
-      mappedAtCreation: true
-    })
-
-    new Float32Array(buffer.getMappedRange()).set(data)
-    buffer.unmap()
-
-    return buffer
+    this.positionBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.positions))
+    this.colorsBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.colors))
+    this.texCoordsBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.texCoords))
+    this.indexBuffer = BufferUtil.createIndexBuffer(this.device, new Uint16Array(geometry.indices))
   }
 
   private prepareModel(shaderSource: string) {
@@ -202,12 +192,13 @@ class Renderer {
     // actual drawing here
     passEncoder.setPipeline(this.pipeline)
 
+    passEncoder.setIndexBuffer(this.indexBuffer, "uint16")
     passEncoder.setVertexBuffer(0, this.positionBuffer)
     passEncoder.setVertexBuffer(1, this.colorsBuffer)
     passEncoder.setVertexBuffer(2, this.texCoordsBuffer)
     passEncoder.setBindGroup(0, this.textureBindGroup)
 
-    passEncoder.draw(6)
+    passEncoder.drawIndexed(6)
 
     passEncoder.end()
 
