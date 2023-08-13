@@ -7,9 +7,7 @@ class Renderer {
   private device!: GPUDevice
   private pipeline!: GPURenderPipeline
 
-  private positionBuffer!: GPUBuffer
-  private colorsBuffer!: GPUBuffer
-  private texCoordsBuffer!: GPUBuffer
+  private verticesBuffer!: GPUBuffer
   private textureBindGroup!: GPUBindGroup
   private indexBuffer!: GPUBuffer
 
@@ -46,9 +44,7 @@ class Renderer {
 
     const geometry = new QuadGeometry()
 
-    this.positionBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.positions))
-    this.colorsBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.colors))
-    this.texCoordsBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.texCoords))
+    this.verticesBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.vertices))
     this.indexBuffer = BufferUtil.createIndexBuffer(this.device, new Uint16Array(geometry.indices))
   }
 
@@ -57,37 +53,23 @@ class Renderer {
       code: shaderSource
     })
 
-    const positionBufferLayout: GPUVertexBufferLayout = {
-      arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
+    const bufferLayout: GPUVertexBufferLayout = {
+      arrayStride: 7 * Float32Array.BYTES_PER_ELEMENT,
       attributes: [
         {
           shaderLocation: 0,
           offset: 0,
           format: 'float32x2' // 2 floats
-        }
-      ],
-      stepMode: 'vertex'
-    }
-
-    const colorBufferLayout: GPUVertexBufferLayout = {
-      arrayStride: 3 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
+        },
         {
           shaderLocation: 1,
-          offset: 0,
-          format: 'float32x3' // 2 floats
-        }
-      ],
-      stepMode: 'vertex'
-    }
-
-    const textureCoordsLayout: GPUVertexBufferLayout = {
-      arrayStride: 2 * Float32Array.BYTES_PER_ELEMENT,
-      attributes: [
+          offset: 2 * Float32Array.BYTES_PER_ELEMENT,
+          format: 'float32x2'
+        },
         {
           shaderLocation: 2,
-          offset: 0,
-          format: 'float32x2' // 2 floats
+          offset: 4 * Float32Array.BYTES_PER_ELEMENT,
+          format: 'float32x3'
         }
       ],
       stepMode: 'vertex'
@@ -97,9 +79,7 @@ class Renderer {
       module: shaderModule,
       entryPoint: 'vertexMain',
       buffers: [
-        positionBufferLayout,
-        colorBufferLayout,
-        textureCoordsLayout
+        bufferLayout,
       ]
     }
 
@@ -193,9 +173,7 @@ class Renderer {
     passEncoder.setPipeline(this.pipeline)
 
     passEncoder.setIndexBuffer(this.indexBuffer, "uint16")
-    passEncoder.setVertexBuffer(0, this.positionBuffer)
-    passEncoder.setVertexBuffer(1, this.colorsBuffer)
-    passEncoder.setVertexBuffer(2, this.texCoordsBuffer)
+    passEncoder.setVertexBuffer(0, this.verticesBuffer)
     passEncoder.setBindGroup(0, this.textureBindGroup)
 
     passEncoder.drawIndexed(6)
