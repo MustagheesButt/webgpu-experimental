@@ -1,6 +1,7 @@
 import { BufferUtil } from "./buffer-util"
+import { Camera } from "./camera"
+import { Content } from "./content"
 import { QuadGeometry } from "./geometry"
-import { Texture } from "./texture"
 
 class Renderer {
   private context!: GPUCanvasContext
@@ -8,13 +9,18 @@ class Renderer {
   private pipeline!: GPURenderPipeline
 
   private verticesBuffer!: GPUBuffer
-  private textureBindGroup!: GPUBindGroup
   private indexBuffer!: GPUBuffer
+  private projectionViewMatrixBuffer!: GPUBuffer
 
-  private testTexture!: Texture
+  private projectViewBindGroup!: GPUBindGroup
+  private textureBindGroup!: GPUBindGroup
+
+  private camera!: Camera
 
   public async init(shaderModule: string) {
     const canvas = document.querySelector('canvas') as HTMLCanvasElement
+
+    this.camera = new Camera(canvas.width, canvas.height)
 
     this.context = canvas.getContext('webgpu')!
 
@@ -34,18 +40,20 @@ class Renderer {
 
     this.device = await adapter.requestDevice()
 
+    await Content.init(this.device)
+
     this.context.configure({
       device: this.device,
       format: navigator.gpu.getPreferredCanvasFormat()
     })
 
-    this.testTexture = await Texture.createTextureFromURL(this.device, "assets/uv-test.jpg")
-    this.prepareModel(shaderModule)
-
     const geometry = new QuadGeometry()
 
+    this.projectionViewMatrixBuffer = BufferUtil.createUniformBuffer(this.device, new Float32Array(16))
     this.verticesBuffer = BufferUtil.createVertexBuffer(this.device, new Float32Array(geometry.vertices))
     this.indexBuffer = BufferUtil.createIndexBuffer(this.device, new Uint16Array(geometry.indices))
+
+    this.prepareModel(shaderModule)
   }
 
   private prepareModel(shaderSource: string) {
@@ -105,6 +113,18 @@ class Renderer {
       ]
     }
 
+    const projectionViewBindGroupLayout = this.device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.VERTEX,
+          buffer: {
+            type: 'uniform'
+          }
+        }
+      ]
+    })
+
     const textureBindGroupLayout = this.device.createBindGroupLayout({
       entries: [
         {
@@ -122,6 +142,7 @@ class Renderer {
 
     const pipelineLayout = this.device.createPipelineLayout({
       bindGroupLayouts: [
+        projectionViewBindGroupLayout,
         textureBindGroupLayout
       ]
     })
@@ -131,11 +152,23 @@ class Renderer {
       entries: [
         {
           binding: 0,
-          resource: this.testTexture.sampler
+          resource: Content.playerTexture.sampler
         },
         {
           binding: 1,
-          resource: this.testTexture.texture.createView()
+          resource: Content.playerTexture.texture.createView()
+        }
+      ]
+    })
+
+    this.projectViewBindGroup = this.device.createBindGroup({
+      layout: projectionViewBindGroupLayout,
+      entries: [
+        {
+          binding: 0,
+          resource: {
+            buffer: this.projectionViewMatrixBuffer
+          }
         }
       ]
     })
@@ -151,6 +184,8 @@ class Renderer {
   }
 
   public draw() {
+    this.camera.update()
+
     const commandEncoder = this.device.createCommandEncoder()
 
     const textureView = this.context.getCurrentTexture().createView()
@@ -170,11 +205,18 @@ class Renderer {
     const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor)
 
     // actual drawing here
+
+    this.device.queue.writeBuffer(
+      this.projectionViewMatrixBuffer,
+      0,
+      this.camera.projectionViewMatrix as Float32Array);
+
     passEncoder.setPipeline(this.pipeline)
 
     passEncoder.setIndexBuffer(this.indexBuffer, "uint16")
     passEncoder.setVertexBuffer(0, this.verticesBuffer)
-    passEncoder.setBindGroup(0, this.textureBindGroup)
+    passEncoder.setBindGroup(0, this.projectViewBindGroup)
+    passEncoder.setBindGroup(1, this.textureBindGroup)
 
     passEncoder.drawIndexed(6)
 
