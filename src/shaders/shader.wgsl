@@ -33,5 +33,5 @@ var tex: texture_2d<f32>;
 fn fragmentMain(fragData: VertexOut) -> @location(0) vec4f
 {
   var textureColor = textureSample(tex, texSampler, fragData.texCoords);
-  return textureColor; // could multiply by fragData.color
+  return textureColor * fragData.color;
 }

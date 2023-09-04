@@ -1,3 +1,4 @@
+import { Color } from "./color"
 import { Content } from "./content"
 import { Rect } from "./rect"
 import { SpriteRenderer } from "./sprite-renderer"
@@ -66,14 +67,24 @@ class Renderer {
 
     // DRAW START
 
-    for (let i = 0; i < 50_000; i++) {
-      this.spriteRenderer.drawSprite(Content.playerTexture,
-        new Rect(
-          Math.random() * this.canvas.width, Math.random() * this.canvas.height,
-          10, 10
-        )
+
+    this.spriteRenderer.drawSpriteSource(Content.uvTexture,
+      new Rect(
+        0, 0,
+        200, 200
+      ),
+      new Rect(
+        0, 0,
+        Content.uvTexture.width / 2, Content.uvTexture.height / 2
       )
-    }
+    )
+
+    const playerSprite = Content.sprites["playerShip1_blue.png"]
+    playerSprite.drawRect.x += 1
+    playerSprite.drawRect.y += 1
+    const tint = new Color(1.0, 0.0, 0.0)
+    this.spriteRenderer.drawSpriteSource(playerSprite.texture, playerSprite.drawRect, playerSprite.sourceRect, tint)
+
     this.spriteRenderer.frameEnd()
 
     // DRAW END

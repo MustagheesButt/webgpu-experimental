@@ -1,5 +1,6 @@
 import { BufferUtil } from "./buffer-util"
 import { Camera } from "./camera"
+import { Color } from "./color"
 import { Rect } from "./rect"
 import { SpritePipeline } from "./sprite-pipeline"
 import { Texture } from "./texture"
@@ -24,6 +25,8 @@ export class SpriteRenderer {
 
   private camera!: Camera
   private passEncoder!: GPURenderPassEncoder
+
+  private defaultColor = new Color()
 
   /**
    * Pipelines created for each texture
@@ -71,6 +74,8 @@ export class SpriteRenderer {
     this.passEncoder = passEncoder
 
     this.batchDrawCallPerTexture = {}
+
+    // this.currentTexture = null
 
     this.camera.update()
 
@@ -142,6 +147,81 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[25 + i] = 1.0
     batchDrawCall.vertexData[26 + i] = 1.0
     batchDrawCall.vertexData[27 + i] = 1.0
+
+    batchDrawCall.instanceCount++
+
+    if (batchDrawCall.instanceCount >= MAX_SPRITES) {
+      const newBatchDrawCall = new BatchDrawCall(pipeline);
+      this.batchDrawCallPerTexture[texture.id].push(newBatchDrawCall);
+    }
+  }
+
+  public drawSpriteSource(texture: Texture, rect: Rect, sourceRect: Rect, color = this.defaultColor) {
+    let pipeline = this.pipelinesPerTexture[texture.id]
+
+    if (this.currentTexture != texture) {
+      this.currentTexture = texture
+
+      if (!pipeline) {
+        pipeline = SpritePipeline.create(this.device, texture, this.projectionViewMatrixBuffer)
+        this.pipelinesPerTexture[texture.id] = pipeline
+      }
+    }
+
+    const batchDrawCalls = this.batchDrawCallPerTexture[texture.id]
+    if (!batchDrawCalls) {
+      this.batchDrawCallPerTexture[texture.id] = []
+    }
+
+    const arrayOfBatchCalls = this.batchDrawCallPerTexture[texture.id]
+    let batchDrawCall = arrayOfBatchCalls[arrayOfBatchCalls.length - 1]
+    if (!batchDrawCall) {
+      batchDrawCall = new BatchDrawCall(pipeline)
+      this.batchDrawCallPerTexture[texture.id].push(batchDrawCall)
+    }
+
+    let i = batchDrawCall.instanceCount * FLOATS_PER_SPRITE
+
+    let u0 = sourceRect.x / texture.width
+    let v0 = sourceRect.y / texture.height
+    let u1 = (sourceRect.x + sourceRect.width) / texture.width
+    let v1 = (sourceRect.y + sourceRect.height) / texture.height
+
+    // top left
+    batchDrawCall.vertexData[0 + i] = rect.x
+    batchDrawCall.vertexData[1 + i] = rect.y
+    batchDrawCall.vertexData[2 + i] = u0
+    batchDrawCall.vertexData[3 + i] = v0
+    batchDrawCall.vertexData[4 + i] = color.r
+    batchDrawCall.vertexData[5 + i] = color.g
+    batchDrawCall.vertexData[6 + i] = color.b
+
+    // top right
+    batchDrawCall.vertexData[7 + i] = rect.x + rect.width
+    batchDrawCall.vertexData[8 + i] = rect.y
+    batchDrawCall.vertexData[9 + i] = u1
+    batchDrawCall.vertexData[10 + i] = v0
+    batchDrawCall.vertexData[11 + i] = color.r
+    batchDrawCall.vertexData[12 + i] = color.g
+    batchDrawCall.vertexData[13 + i] = color.b
+
+    // bottom right
+    batchDrawCall.vertexData[14 + i] = rect.x + rect.width
+    batchDrawCall.vertexData[15 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[16 + i] = u1
+    batchDrawCall.vertexData[17 + i] = v1
+    batchDrawCall.vertexData[18 + i] = color.r
+    batchDrawCall.vertexData[19 + i] = color.g
+    batchDrawCall.vertexData[20 + i] = color.b
+
+    // bottom left
+    batchDrawCall.vertexData[21 + i] = rect.x
+    batchDrawCall.vertexData[22 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[23 + i] = u0
+    batchDrawCall.vertexData[24 + i] = v1
+    batchDrawCall.vertexData[25 + i] = color.r
+    batchDrawCall.vertexData[26 + i] = color.g
+    batchDrawCall.vertexData[27 + i] = color.b
 
     batchDrawCall.instanceCount++
 

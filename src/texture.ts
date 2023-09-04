@@ -3,7 +3,9 @@ export class Texture {
   constructor(
     public texture: GPUTexture,
     public sampler: GPUSampler,
-    public id: string
+    public id: string,
+    public width: number,
+    public height: number
   ) { }
 
   public static async createTexture(
@@ -26,7 +28,7 @@ export class Texture {
 
     const sampler = device.createSampler()
 
-    return new Texture(texture, sampler, image.src)
+    return new Texture(texture, sampler, image.src, image.width, image.height)
   }
 
   public static async createTextureFromURL(device: GPUDevice, url: string): Promise<Texture> {
