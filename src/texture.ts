@@ -26,7 +26,10 @@ export class Texture {
       { width: image.width, height: image.height }
     )
 
-    const sampler = device.createSampler()
+    const sampler = device.createSampler({
+      minFilter: 'nearest',
+      magFilter: 'nearest'
+    })
 
     return new Texture(texture, sampler, image.src, image.width, image.height)
   }

@@ -11,6 +11,8 @@ class Renderer {
   private passEncoder!: GPURenderPassEncoder
   private spriteRenderer!: SpriteRenderer
 
+  private rotation = 0.0
+
 
   public async init() {
     this.canvas = document.querySelector('canvas') as HTMLCanvasElement
@@ -71,7 +73,7 @@ class Renderer {
     this.spriteRenderer.drawSpriteSource(Content.uvTexture,
       new Rect(
         0, 0,
-        200, 200
+        400, 400
       ),
       new Rect(
         0, 0,
@@ -82,8 +84,12 @@ class Renderer {
     const playerSprite = Content.sprites["playerShip1_blue.png"]
     playerSprite.drawRect.x += 1
     playerSprite.drawRect.y += 1
-    const tint = new Color(1.0, 0.0, 0.0)
-    this.spriteRenderer.drawSpriteSource(playerSprite.texture, playerSprite.drawRect, playerSprite.sourceRect, tint)
+    const tint = new Color(1.0, 1.0, 1.0)
+    this.rotation += 0.1
+    this.spriteRenderer.drawSpriteSource(
+      playerSprite.texture, playerSprite.drawRect, playerSprite.sourceRect,
+      tint, this.rotation, [0.5, 0.5]
+    )
 
     this.spriteRenderer.frameEnd()
 

@@ -1,3 +1,4 @@
+import { vec2 } from "gl-matrix"
 import { BufferUtil } from "./buffer-util"
 import { Camera } from "./camera"
 import { Color } from "./color"
@@ -27,6 +28,12 @@ export class SpriteRenderer {
   private passEncoder!: GPURenderPassEncoder
 
   private defaultColor = new Color()
+
+  private v0 = vec2.create()
+  private v1 = vec2.create()
+  private v2 = vec2.create()
+  private v3 = vec2.create()
+  private rotationOrigin = vec2.create()
 
   /**
    * Pipelines created for each texture
@@ -112,9 +119,18 @@ export class SpriteRenderer {
 
     let i = batchDrawCall.instanceCount * FLOATS_PER_SPRITE
 
+    this.v0[0] = rect.x
+    this.v0[1] = rect.y
+    this.v1[0] = rect.x + rect.width
+    this.v1[1] = rect.y
+    this.v2[0] = rect.x + rect.width
+    this.v2[1] = rect.y + rect.height
+    this.v3[0] = rect.x
+    this.v3[1] = rect.y + rect.height
+
     // top left
-    batchDrawCall.vertexData[0 + i] = rect.x
-    batchDrawCall.vertexData[1 + i] = rect.y
+    batchDrawCall.vertexData[0 + i] = this.v0[0]
+    batchDrawCall.vertexData[1 + i] = this.v0[1]
     batchDrawCall.vertexData[2 + i] = 0
     batchDrawCall.vertexData[3 + i] = 0
     batchDrawCall.vertexData[4 + i] = 1.0
@@ -122,8 +138,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[6 + i] = 1.0
 
     // top right
-    batchDrawCall.vertexData[7 + i] = rect.x + rect.width
-    batchDrawCall.vertexData[8 + i] = rect.y
+    batchDrawCall.vertexData[7 + i] = this.v1[0]
+    batchDrawCall.vertexData[8 + i] = this.v1[1]
     batchDrawCall.vertexData[9 + i] = 1
     batchDrawCall.vertexData[10 + i] = 0
     batchDrawCall.vertexData[11 + i] = 1.0
@@ -131,8 +147,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[13 + i] = 1.0
 
     // bottom right
-    batchDrawCall.vertexData[14 + i] = rect.x + rect.width
-    batchDrawCall.vertexData[15 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[14 + i] = this.v2[0]
+    batchDrawCall.vertexData[15 + i] = this.v2[1]
     batchDrawCall.vertexData[16 + i] = 1
     batchDrawCall.vertexData[17 + i] = 1
     batchDrawCall.vertexData[18 + i] = 1.0
@@ -140,8 +156,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[20 + i] = 1.0
 
     // bottom left
-    batchDrawCall.vertexData[21 + i] = rect.x
-    batchDrawCall.vertexData[22 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[21 + i] = this.v3[0]
+    batchDrawCall.vertexData[22 + i] = this.v3[1]
     batchDrawCall.vertexData[23 + i] = 0
     batchDrawCall.vertexData[24 + i] = 1
     batchDrawCall.vertexData[25 + i] = 1.0
@@ -156,7 +172,10 @@ export class SpriteRenderer {
     }
   }
 
-  public drawSpriteSource(texture: Texture, rect: Rect, sourceRect: Rect, color = this.defaultColor) {
+  public drawSpriteSource(
+    texture: Texture, rect: Rect, sourceRect: Rect,
+    color = this.defaultColor, rotation = 0, rotationAnchor: vec2 | null = null
+  ) {
     let pipeline = this.pipelinesPerTexture[texture.id]
 
     if (this.currentTexture != texture) {
@@ -187,9 +206,32 @@ export class SpriteRenderer {
     let u1 = (sourceRect.x + sourceRect.width) / texture.width
     let v1 = (sourceRect.y + sourceRect.height) / texture.height
 
+    this.v0[0] = rect.x
+    this.v0[1] = rect.y
+    this.v1[0] = rect.x + rect.width
+    this.v1[1] = rect.y
+    this.v2[0] = rect.x + rect.width
+    this.v2[1] = rect.y + rect.height
+    this.v3[0] = rect.x
+    this.v3[1] = rect.y + rect.height
+
+    if (rotation != 0) {
+      if (!rotationAnchor) {
+        vec2.copy(this.rotationOrigin, this.v0)
+      } else {
+        this.rotationOrigin[0] = this.v0[0] + rotationAnchor[0] * rect.width
+        this.rotationOrigin[1] = this.v0[1] + rotationAnchor[1] * rect.height
+      }
+
+      vec2.rotate(this.v0, this.v0, this.rotationOrigin, rotation)
+      vec2.rotate(this.v1, this.v1, this.rotationOrigin, rotation)
+      vec2.rotate(this.v2, this.v2, this.rotationOrigin, rotation)
+      vec2.rotate(this.v3, this.v3, this.rotationOrigin, rotation)
+    }
+
     // top left
-    batchDrawCall.vertexData[0 + i] = rect.x
-    batchDrawCall.vertexData[1 + i] = rect.y
+    batchDrawCall.vertexData[0 + i] = this.v0[0]
+    batchDrawCall.vertexData[1 + i] = this.v0[1]
     batchDrawCall.vertexData[2 + i] = u0
     batchDrawCall.vertexData[3 + i] = v0
     batchDrawCall.vertexData[4 + i] = color.r
@@ -197,8 +239,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[6 + i] = color.b
 
     // top right
-    batchDrawCall.vertexData[7 + i] = rect.x + rect.width
-    batchDrawCall.vertexData[8 + i] = rect.y
+    batchDrawCall.vertexData[7 + i] = this.v1[0]
+    batchDrawCall.vertexData[8 + i] = this.v1[1]
     batchDrawCall.vertexData[9 + i] = u1
     batchDrawCall.vertexData[10 + i] = v0
     batchDrawCall.vertexData[11 + i] = color.r
@@ -206,8 +248,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[13 + i] = color.b
 
     // bottom right
-    batchDrawCall.vertexData[14 + i] = rect.x + rect.width
-    batchDrawCall.vertexData[15 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[14 + i] = this.v2[0]
+    batchDrawCall.vertexData[15 + i] = this.v2[1]
     batchDrawCall.vertexData[16 + i] = u1
     batchDrawCall.vertexData[17 + i] = v1
     batchDrawCall.vertexData[18 + i] = color.r
@@ -215,8 +257,8 @@ export class SpriteRenderer {
     batchDrawCall.vertexData[20 + i] = color.b
 
     // bottom left
-    batchDrawCall.vertexData[21 + i] = rect.x
-    batchDrawCall.vertexData[22 + i] = rect.y + rect.height
+    batchDrawCall.vertexData[21 + i] = this.v3[0]
+    batchDrawCall.vertexData[22 + i] = this.v3[1]
     batchDrawCall.vertexData[23 + i] = u0
     batchDrawCall.vertexData[24 + i] = v1
     batchDrawCall.vertexData[25 + i] = color.r
