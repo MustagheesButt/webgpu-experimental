@@ -18,7 +18,7 @@ export class Content {
     const atlas = await req.json()
 
     atlas.SubTexture.forEach((subTexture: any) => {
-      const name = subTexture.name
+      const name = subTexture.name.split(".")[0]
       const width = +subTexture.width
       const height = +subTexture.height
       const drawRect = new Rect(0, 0, width, height)

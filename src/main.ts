@@ -1,7 +1,18 @@
-import Renderer from "./renderer"
+import Engine from "./engine"
+import { Player } from "./game/player"
 
 
-const renderer = new Renderer()
-renderer.init().then(
-  () => renderer.draw()
-)
+const engine = new Engine()
+engine.init().then(() => {
+  const player = new Player(engine.inputManager, engine.bounds)
+
+  engine.onUpdate = (dt: number) => {
+    player.update(dt)
+  }
+
+  engine.onDraw = () => {
+    player.draw(engine.spriteRenderer)
+  }
+
+  engine.draw()
+})

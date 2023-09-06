@@ -6,4 +6,8 @@ export class Rect {
     public height: number
   ) {
   }
+
+  public copy() {
+    return new Rect(this.x, this.y, this.width, this.height)
+  }
 }

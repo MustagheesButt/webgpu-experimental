@@ -1,23 +1,29 @@
-import { Color } from "./color"
+import { vec2 } from "gl-matrix"
 import { Content } from "./content"
-import { Rect } from "./rect"
+import { InputManager } from "./input-manager"
 import { SpriteRenderer } from "./sprite-renderer"
 
-class Renderer {
+class Engine {
   private canvas!: HTMLCanvasElement
   private context!: GPUCanvasContext
   private device!: GPUDevice
 
   private passEncoder!: GPURenderPassEncoder
-  private spriteRenderer!: SpriteRenderer
+  public spriteRenderer!: SpriteRenderer
 
-  private rotation = 0.0
+  public inputManager = new InputManager()
+  private lastTime = 0
+  public bounds = vec2.create()
 
+  public onUpdate(_dt: number) {}
+  public onDraw() {}
 
   public async init() {
     this.canvas = document.querySelector('canvas') as HTMLCanvasElement
 
     this.context = this.canvas.getContext('webgpu')!
+
+    this.bounds = vec2.fromValues(this.canvas.width, this.canvas.height)
 
     if (!this.context) {
       alert("WebGPU is not supported!")
@@ -47,6 +53,12 @@ class Renderer {
   }
 
   public draw() {
+    const now = performance.now()
+    const dt =  now - this.lastTime
+    this.lastTime = now
+
+    this.onUpdate(dt)
+
     const commandEncoder = this.device.createCommandEncoder()
 
     const textureView = this.context.getCurrentTexture().createView()
@@ -69,31 +81,10 @@ class Renderer {
 
     // DRAW START
 
-
-    this.spriteRenderer.drawSpriteSource(Content.uvTexture,
-      new Rect(
-        0, 0,
-        400, 400
-      ),
-      new Rect(
-        0, 0,
-        Content.uvTexture.width / 2, Content.uvTexture.height / 2
-      )
-    )
-
-    const playerSprite = Content.sprites["playerShip1_blue.png"]
-    playerSprite.drawRect.x += 1
-    playerSprite.drawRect.y += 1
-    const tint = new Color(1.0, 1.0, 1.0)
-    this.rotation += 0.1
-    this.spriteRenderer.drawSpriteSource(
-      playerSprite.texture, playerSprite.drawRect, playerSprite.sourceRect,
-      tint, this.rotation, [0.5, 0.5]
-    )
-
-    this.spriteRenderer.frameEnd()
+    this.onDraw()
 
     // DRAW END
+    this.spriteRenderer.frameEnd()
 
     this.passEncoder.end()
 
@@ -103,4 +94,4 @@ class Renderer {
   }
 }
 
-export default Renderer
+export default Engine
