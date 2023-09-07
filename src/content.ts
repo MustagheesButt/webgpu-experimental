@@ -3,6 +3,7 @@ import { Sprite } from "./sprite";
 import { Texture } from "./texture";
 
 export class Content {
+  public static backgroundTexture: Texture
   public static uvTexture: Texture
   public static spriteSheet: Texture
   public static sprites: {[id: string]: Sprite} = {}
@@ -10,6 +11,7 @@ export class Content {
   public static async init(device: GPUDevice): Promise<void> {
     Content.uvTexture = await Texture.createTextureFromURL(device, "assets/uv-test.jpg")
     this.spriteSheet = await Texture.createTextureFromURL(device, "assets/sprites/sheet.png")
+    this.backgroundTexture = await Texture.createTextureFromURL(device, "assets/backgrounds/purple.png")
     await this.loadSpriteSheet()
   }
 

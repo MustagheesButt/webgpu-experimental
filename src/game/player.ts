@@ -6,6 +6,7 @@ import { Texture } from "../texture";
 import { InputManager } from "../input-manager";
 
 const PLAYER_SPEED = 0.25
+const PLAYER_START_POS = { x: 0.45, y: 0.85 }
 
 export class Player {
   private movementDirection = vec2.create()
@@ -19,6 +20,8 @@ export class Player {
     this.texture = playerSprite.texture
     this.sourceRect = playerSprite.sourceRect.copy()
     this.drawRect = playerSprite.drawRect.copy()
+    this.drawRect.x = PLAYER_START_POS.x * bounds[0]
+    this.drawRect.y = PLAYER_START_POS.y * bounds[1]
   }
 
   private clampToBounds() {
