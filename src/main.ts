@@ -8,7 +8,7 @@ const engine = new Engine()
 engine.init().then(() => {
   const player = new Player(engine.inputManager, engine.bounds)
   const background = new Background(engine.bounds)
-  const enemyManager = new EnemyManager(engine.bounds)
+  const enemyManager = new EnemyManager(player, engine.bounds)
 
   engine.onUpdate = (dt: number) => {
     background.update(dt)
