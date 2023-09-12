@@ -14,7 +14,7 @@ export class Player {
 
   private texture: Texture
   private sourceRect: Rect
-  private drawRect: Rect
+  public readonly drawRect: Rect
   readonly collider: CircleCollider = new CircleCollider()
 
   constructor(private inputManager: InputManager, private bounds: vec2) {

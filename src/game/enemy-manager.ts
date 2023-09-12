@@ -4,6 +4,7 @@ import { EnemyMeteor } from "./enemy-meteor"
 import { SpriteRenderer } from "../sprite-renderer"
 import { Player } from "./player"
 import { ExplosionManager } from "./explosion-manager"
+import { BulletManager } from "./bullet-manager"
 
 const SPAWN_INTERVAL = 1000
 export class EnemyManager {
@@ -13,6 +14,7 @@ export class EnemyManager {
   constructor(
     private player: Player,
     private readonly explosionManager: ExplosionManager,
+    private readonly bulletManager: BulletManager,
     private bounds: vec2
   ) {
   }
@@ -42,6 +44,11 @@ export class EnemyManager {
         enemy.update(dt)
 
         if (enemy.collider.intersects(this.player.collider)) {
+          enemy.active = false
+          this.explosionManager.create(enemy.drawRect)
+        }
+
+        if (this.bulletManager.intersectsEnemy(enemy)) {
           enemy.active = false
           this.explosionManager.create(enemy.drawRect)
         }
