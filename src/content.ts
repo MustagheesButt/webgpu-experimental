@@ -5,6 +5,7 @@ import { Texture } from "./texture";
 export class Content {
   public static backgroundTexture: Texture
   public static uvTexture: Texture
+  public static explosionTexture: Texture
   public static spriteSheet: Texture
   public static sprites: {[id: string]: Sprite} = {}
 
@@ -12,6 +13,7 @@ export class Content {
     Content.uvTexture = await Texture.createTextureFromURL(device, "assets/uv-test.jpg")
     this.spriteSheet = await Texture.createTextureFromURL(device, "assets/sprites/sheet.png")
     this.backgroundTexture = await Texture.createTextureFromURL(device, "assets/backgrounds/purple.png")
+    this.explosionTexture = await Texture.createTextureFromURL(device, "assets/explosion.png")
     await this.loadSpriteSheet()
   }
 
