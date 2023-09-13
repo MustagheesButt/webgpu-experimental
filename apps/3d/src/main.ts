@@ -18,6 +18,19 @@ async function init() {
     format
   })
 
+  const bindGroupLayout = device.createBindGroupLayout({
+    entries: []
+  })
+
+  const bindGroup = device.createBindGroup({
+    layout: bindGroupLayout,
+    entries: []
+  })
+
+  const pipelineLayout = device.createPipelineLayout({
+    bindGroupLayouts: [bindGroupLayout]
+  })
+
   const pipeline = device.createRenderPipeline({
     vertex: {
       module: device.createShaderModule({
@@ -37,7 +50,7 @@ async function init() {
     primitive: {
       topology: "triangle-list"
     },
-    layout: "auto"
+    layout: pipelineLayout
   })
 
   const commandEncoder = device.createCommandEncoder()
@@ -52,6 +65,7 @@ async function init() {
     }]
   })
   renderPass.setPipeline(pipeline)
+  renderPass.setBindGroup(0, bindGroup)
 
   renderPass.draw(3, 1, 0, 0)
 
