@@ -54,6 +54,10 @@ export class EnemyMeteor implements Enemy {
     this.rotation += this.rotationSpeed * dt
 
     this.collider.update(this.drawRect)
+
+    if (this.drawRect.y > this.bounds[1]) {
+      this.active = false
+    }
   }
 
   draw(spriteRenderer: SpriteRenderer): void {
