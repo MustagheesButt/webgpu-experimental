@@ -1,0 +1,17 @@
+{
+  "name": "3d-game",
+  "module": "src/main.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "@webgpu/types": "^0.1.34",
+    "vite": "^4.4.9",
+    "typescript": "^5.0.2"
+  },
+  "dependencies": {
+  }
+}
